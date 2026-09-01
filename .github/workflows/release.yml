@@ -40,8 +40,10 @@ jobs:
           test "${tag_type}" = "tag"
           tag_target=$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${tag_object}" --jq '.object.sha')
           test "${tag_target}" = "${GITHUB_SHA}"
-          immutable_settings=$(gh api "repos/${GITHUB_REPOSITORY}/immutable-releases")
-          test "$(printf '%s' "${immutable_settings}" | jq -r '.enabled')" = "true"
+          # Immutable releases are enabled once by the repository owner via
+          # the Administration REST API. GITHUB_TOKEN cannot read that admin
+          # setting; the release API assertion below is the authoritative CI
+          # check for the published result.
           go build ./...
           go test ./...
           go vet ./...
