@@ -50,6 +50,8 @@ func ExecuteProof(proof Proof, input FixtureInput) (ExecutionResult, error) {
 			if currentDigest != previousDigest {
 				return ExecutionResult{}, fmt.Errorf("replay digest mismatch")
 			}
+			result.Effects = appendUnique(result.Effects, "replay.verify")
+			result.EffectTrace = append(result.EffectTrace, "replay:replay.verify")
 		default:
 			return ExecutionResult{}, fmt.Errorf("generated proof contains unknown executor step %q", step.Operation)
 		}
