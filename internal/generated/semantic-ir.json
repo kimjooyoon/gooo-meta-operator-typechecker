@@ -1,0 +1,775 @@
+{
+  "schema": "gooo/meta-operator-typechecker/ir/v1",
+  "version": "v1",
+  "source_digest": "4bc40ade090d8e860e30275cf5da3b18f5dd817a1c272b6e84c2eaca79bd967d",
+  "contract_digest": "747107d682a3765f38c1674462732afd0e9463617fec5d1b5dbe249f56e6473b",
+  "denominator": {
+    "id": "meta-operator-typechecker-v1",
+    "case_count": 7,
+    "fixed": true
+  },
+  "authority": {
+    "repository_writes": 0,
+    "local_test_executions": 0,
+    "cross_project_required_gates": 0,
+    "automatic_commit": 0,
+    "automatic_push": 0,
+    "automatic_merge": 0,
+    "automatic_release": 0
+  },
+  "precedence": [
+    "REFUTED",
+    "UNKNOWN",
+    "CLOSED"
+  ],
+  "unknown_fields": [
+    "stage",
+    "step",
+    "reason",
+    "unknown_class",
+    "next_operation",
+    "blocked_by"
+  ],
+  "kinds": [
+    {
+      "id": "value"
+    },
+    {
+      "id": "meta"
+    },
+    {
+      "id": "proof"
+    }
+  ],
+  "types": [
+    {
+      "id": "Fixture",
+      "kind": "value"
+    },
+    {
+      "id": "Artifact",
+      "kind": "value"
+    },
+    {
+      "id": "Unit",
+      "kind": "value"
+    },
+    {
+      "id": "MetaOp",
+      "kind": "meta"
+    }
+  ],
+  "effects": [
+    {
+      "id": "fixture.read"
+    },
+    {
+      "id": "artifact.normalize"
+    },
+    {
+      "id": "replay.verify"
+    }
+  ],
+  "stages": [
+    {
+      "id": "quote",
+      "index": 0
+    },
+    {
+      "id": "compile",
+      "index": 1
+    },
+    {
+      "id": "run",
+      "index": 2
+    }
+  ],
+  "origins": [
+    {
+      "id": "literal",
+      "identity": "literal"
+    },
+    {
+      "id": "fixture",
+      "identity": "fixture"
+    },
+    {
+      "id": "generated",
+      "identity": "generated"
+    },
+    {
+      "id": "caller",
+      "identity": "caller"
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "compiler.fixture"
+    },
+    {
+      "id": "replay.fixture"
+    }
+  ],
+  "operations": [
+    {
+      "id": "identity",
+      "kind": "MetaOp",
+      "input": "Fixture",
+      "output": "Fixture",
+      "stage": "run",
+      "origin": "fixture",
+      "requires": [
+        "compiler.fixture"
+      ],
+      "effects": [],
+      "pre": "fixture_valid",
+      "post": "artifact_stable"
+    },
+    {
+      "id": "read_fixture",
+      "kind": "MetaOp",
+      "input": "Fixture",
+      "output": "Fixture",
+      "stage": "run",
+      "origin": "fixture",
+      "requires": [
+        "compiler.fixture"
+      ],
+      "effects": [
+        "fixture.read"
+      ],
+      "pre": "fixture_valid",
+      "post": "fixture_read"
+    },
+    {
+      "id": "normalize",
+      "kind": "MetaOp",
+      "input": "Fixture",
+      "output": "Artifact",
+      "stage": "run",
+      "origin": "generated",
+      "requires": [
+        "compiler.fixture"
+      ],
+      "effects": [
+        "artifact.normalize"
+      ],
+      "pre": "fixture_read",
+      "post": "fixture_normalized"
+    },
+    {
+      "id": "generic_cap",
+      "kind": "MetaOp",
+      "input": "Fixture",
+      "output": "Fixture",
+      "stage": "run",
+      "origin": "fixture",
+      "requires": [
+        "$cap"
+      ],
+      "effects": [
+        "fixture.read"
+      ],
+      "pre": "fixture_valid",
+      "post": "fixture_read"
+    },
+    {
+      "id": "late_stage",
+      "kind": "MetaOp",
+      "input": "Fixture",
+      "output": "Fixture",
+      "stage": "run",
+      "origin": "fixture",
+      "requires": [
+        "compiler.fixture"
+      ],
+      "effects": [],
+      "pre": "fixture_valid",
+      "post": "artifact_stable"
+    },
+    {
+      "id": "capturing_op",
+      "kind": "MetaOp",
+      "input": "Fixture",
+      "output": "Fixture",
+      "stage": "run",
+      "origin": "generated",
+      "requires": [
+        "compiler.fixture"
+      ],
+      "effects": [],
+      "pre": "fixture_valid",
+      "post": "artifact_stable"
+    }
+  ],
+  "rules": [
+    {
+      "id": "compose_effects",
+      "operator": "compose",
+      "properties": {
+        "effects": "disjoint_union"
+      }
+    },
+    {
+      "id": "stage_escape",
+      "operator": "compose",
+      "properties": {
+        "stage": "must_not_escape"
+      }
+    },
+    {
+      "id": "origin_hygiene",
+      "operator": "compose",
+      "properties": {
+        "origin": "must_be_hygienic"
+      }
+    },
+    {
+      "id": "capability_binding",
+      "operator": "instantiate",
+      "properties": {
+        "missing": "UNKNOWN"
+      }
+    },
+    {
+      "id": "replay",
+      "operator": "replay",
+      "properties": {
+        "digest": "exact"
+      }
+    }
+  ],
+  "fixtures": [
+    {
+      "id": "compiler_fixture",
+      "path": "fixtures/compiler/input.gooo",
+      "expected_output": "module:fixture;term:identity"
+    }
+  ],
+  "cases": [
+    {
+      "ordinal": 1,
+      "id": "identity-composition",
+      "expression": "compose(identity,identity)",
+      "fixture": "compiler_fixture",
+      "target_stage": "run",
+      "bound_capabilities": [
+        "compiler.fixture"
+      ],
+      "expected": "CLOSED",
+      "expected_reason": "IDENTITY_COMPOSITION_OK",
+      "expected_effects": [],
+      "expected_post": "artifact_stable",
+      "expected_trace": [
+        "identity:∅",
+        "identity:∅"
+      ],
+      "unknown_class": "",
+      "next_operation": "",
+      "blocked_by": []
+    },
+    {
+      "ordinal": 2,
+      "id": "disjoint-effect-composition",
+      "expression": "compose(read_fixture,normalize)",
+      "fixture": "compiler_fixture",
+      "target_stage": "run",
+      "bound_capabilities": [
+        "compiler.fixture"
+      ],
+      "expected": "CLOSED",
+      "expected_reason": "DISJOINT_EFFECT_COMPOSITION_OK",
+      "expected_effects": [
+        "fixture.read",
+        "artifact.normalize"
+      ],
+      "expected_post": "fixture_normalized",
+      "expected_trace": [
+        "read_fixture:fixture.read",
+        "normalize:artifact.normalize"
+      ],
+      "unknown_class": "",
+      "next_operation": "",
+      "blocked_by": []
+    },
+    {
+      "ordinal": 3,
+      "id": "capability-polymorphic-instantiation",
+      "expression": "instantiate(generic_cap,compiler.fixture)",
+      "fixture": "compiler_fixture",
+      "target_stage": "run",
+      "bound_capabilities": [
+        "compiler.fixture"
+      ],
+      "expected": "CLOSED",
+      "expected_reason": "CAPABILITY_POLYMORPHIC_INSTANTIATION_OK",
+      "expected_effects": [
+        "fixture.read"
+      ],
+      "expected_post": "fixture_read",
+      "expected_trace": [
+        "generic_cap:fixture.read"
+      ],
+      "unknown_class": "",
+      "next_operation": "",
+      "blocked_by": []
+    },
+    {
+      "ordinal": 4,
+      "id": "stage-escape",
+      "expression": "stage_escape(late_stage,quote)",
+      "fixture": "compiler_fixture",
+      "target_stage": "quote",
+      "bound_capabilities": [
+        "compiler.fixture"
+      ],
+      "expected": "REFUTED",
+      "expected_reason": "STAGE_ESCAPE",
+      "expected_effects": [],
+      "expected_post": "-",
+      "expected_trace": [],
+      "unknown_class": "",
+      "next_operation": "",
+      "blocked_by": []
+    },
+    {
+      "ordinal": 5,
+      "id": "origin-capture",
+      "expression": "origin_capture(capturing_op,caller)",
+      "fixture": "compiler_fixture",
+      "target_stage": "run",
+      "bound_capabilities": [
+        "compiler.fixture"
+      ],
+      "expected": "REFUTED",
+      "expected_reason": "ORIGIN_CAPTURE",
+      "expected_effects": [],
+      "expected_post": "-",
+      "expected_trace": [],
+      "unknown_class": "",
+      "next_operation": "",
+      "blocked_by": []
+    },
+    {
+      "ordinal": 6,
+      "id": "unbound-capability",
+      "expression": "unbound(read_fixture)",
+      "fixture": "compiler_fixture",
+      "target_stage": "run",
+      "bound_capabilities": [],
+      "expected": "UNKNOWN",
+      "expected_reason": "UNBOUND_CAPABILITY",
+      "expected_effects": [],
+      "expected_post": "-",
+      "expected_trace": [],
+      "unknown_class": "UNBOUND_CAPABILITY",
+      "next_operation": "BindCompilerFixture",
+      "blocked_by": [
+        "compiler.fixture"
+      ]
+    },
+    {
+      "ordinal": 7,
+      "id": "replay",
+      "expression": "replay(identity)",
+      "fixture": "compiler_fixture",
+      "target_stage": "run",
+      "bound_capabilities": [
+        "compiler.fixture",
+        "replay.fixture"
+      ],
+      "expected": "CLOSED",
+      "expected_reason": "REPLAY_EXACT_MATCH",
+      "expected_effects": [
+        "replay.verify"
+      ],
+      "expected_post": "artifact_stable",
+      "expected_trace": [
+        "identity:∅",
+        "replay:replay.verify"
+      ],
+      "unknown_class": "",
+      "next_operation": "",
+      "blocked_by": []
+    }
+  ],
+  "proofs": [
+    {
+      "schema": "gooo/meta-operator-typechecker/generated/v1",
+      "case_id": "identity-composition",
+      "decision": "CLOSED",
+      "terminal_reason": "IDENTITY_COMPOSITION_OK",
+      "source_digest": "4bc40ade090d8e860e30275cf5da3b18f5dd817a1c272b6e84c2eaca79bd967d",
+      "contract_digest": "747107d682a3765f38c1674462732afd0e9463617fec5d1b5dbe249f56e6473b",
+      "ir_digest": "b25e84fc1f6f62bca9dbe3027d214dbf350b2a0245a56b38ecd9e68d15444ba5",
+      "target_stage": 2,
+      "typed_expression": {
+        "expression": {
+          "name": "compose",
+          "args": [
+            {
+              "name": "identity"
+            },
+            {
+              "name": "identity"
+            }
+          ]
+        },
+        "input_type": "Fixture",
+        "output_type": "Fixture",
+        "stage": 2,
+        "origin": "fixture",
+        "required_capabilities": [
+          "compiler.fixture"
+        ],
+        "effects": [],
+        "preconditions": [
+          "fixture_valid",
+          "fixture_valid"
+        ],
+        "postconditions": [
+          "artifact_stable",
+          "artifact_stable"
+        ],
+        "plan": [
+          {
+            "operation": "identity",
+            "capability": "compiler.fixture"
+          },
+          {
+            "operation": "identity",
+            "capability": "compiler.fixture"
+          }
+        ],
+        "replay": false
+      },
+      "expected_effects": null,
+      "expected_post": "artifact_stable",
+      "expected_effect_trace": [
+        "identity:∅",
+        "identity:∅"
+      ],
+      "unknown": {
+        "stage": "",
+        "step": "",
+        "reason": "",
+        "unknown_class": "",
+        "next_operation": "",
+        "blocked_by": null
+      },
+      "replay": false
+    },
+    {
+      "schema": "gooo/meta-operator-typechecker/generated/v1",
+      "case_id": "disjoint-effect-composition",
+      "decision": "CLOSED",
+      "terminal_reason": "DISJOINT_EFFECT_COMPOSITION_OK",
+      "source_digest": "4bc40ade090d8e860e30275cf5da3b18f5dd817a1c272b6e84c2eaca79bd967d",
+      "contract_digest": "747107d682a3765f38c1674462732afd0e9463617fec5d1b5dbe249f56e6473b",
+      "ir_digest": "b25e84fc1f6f62bca9dbe3027d214dbf350b2a0245a56b38ecd9e68d15444ba5",
+      "target_stage": 2,
+      "typed_expression": {
+        "expression": {
+          "name": "compose",
+          "args": [
+            {
+              "name": "read_fixture"
+            },
+            {
+              "name": "normalize"
+            }
+          ]
+        },
+        "input_type": "Fixture",
+        "output_type": "Artifact",
+        "stage": 2,
+        "origin": "generated",
+        "required_capabilities": [
+          "compiler.fixture"
+        ],
+        "effects": [
+          "fixture.read",
+          "artifact.normalize"
+        ],
+        "preconditions": [
+          "fixture_valid",
+          "fixture_read"
+        ],
+        "postconditions": [
+          "fixture_read",
+          "fixture_normalized"
+        ],
+        "plan": [
+          {
+            "operation": "read_fixture",
+            "capability": "compiler.fixture"
+          },
+          {
+            "operation": "normalize",
+            "capability": "compiler.fixture"
+          }
+        ],
+        "replay": false
+      },
+      "expected_effects": [
+        "fixture.read",
+        "artifact.normalize"
+      ],
+      "expected_post": "fixture_normalized",
+      "expected_effect_trace": [
+        "read_fixture:fixture.read",
+        "normalize:artifact.normalize"
+      ],
+      "unknown": {
+        "stage": "",
+        "step": "",
+        "reason": "",
+        "unknown_class": "",
+        "next_operation": "",
+        "blocked_by": null
+      },
+      "replay": false
+    },
+    {
+      "schema": "gooo/meta-operator-typechecker/generated/v1",
+      "case_id": "capability-polymorphic-instantiation",
+      "decision": "CLOSED",
+      "terminal_reason": "CAPABILITY_POLYMORPHIC_INSTANTIATION_OK",
+      "source_digest": "4bc40ade090d8e860e30275cf5da3b18f5dd817a1c272b6e84c2eaca79bd967d",
+      "contract_digest": "747107d682a3765f38c1674462732afd0e9463617fec5d1b5dbe249f56e6473b",
+      "ir_digest": "b25e84fc1f6f62bca9dbe3027d214dbf350b2a0245a56b38ecd9e68d15444ba5",
+      "target_stage": 2,
+      "typed_expression": {
+        "expression": {
+          "name": "instantiate",
+          "args": [
+            {
+              "name": "generic_cap"
+            },
+            {
+              "name": "compiler.fixture"
+            }
+          ]
+        },
+        "input_type": "Fixture",
+        "output_type": "Fixture",
+        "stage": 2,
+        "origin": "fixture",
+        "required_capabilities": [
+          "compiler.fixture"
+        ],
+        "effects": [
+          "fixture.read"
+        ],
+        "preconditions": [
+          "fixture_valid"
+        ],
+        "postconditions": [
+          "fixture_read"
+        ],
+        "plan": [
+          {
+            "operation": "generic_cap",
+            "capability": "compiler.fixture"
+          }
+        ],
+        "replay": false
+      },
+      "expected_effects": [
+        "fixture.read"
+      ],
+      "expected_post": "fixture_read",
+      "expected_effect_trace": [
+        "generic_cap:fixture.read"
+      ],
+      "unknown": {
+        "stage": "",
+        "step": "",
+        "reason": "",
+        "unknown_class": "",
+        "next_operation": "",
+        "blocked_by": null
+      },
+      "replay": false
+    },
+    {
+      "schema": "gooo/meta-operator-typechecker/generated/v1",
+      "case_id": "stage-escape",
+      "decision": "REFUTED",
+      "terminal_reason": "STAGE_ESCAPE",
+      "source_digest": "4bc40ade090d8e860e30275cf5da3b18f5dd817a1c272b6e84c2eaca79bd967d",
+      "contract_digest": "747107d682a3765f38c1674462732afd0e9463617fec5d1b5dbe249f56e6473b",
+      "ir_digest": "b25e84fc1f6f62bca9dbe3027d214dbf350b2a0245a56b38ecd9e68d15444ba5",
+      "target_stage": 0,
+      "typed_expression": {
+        "expression": {
+          "name": ""
+        },
+        "input_type": "",
+        "output_type": "",
+        "stage": 0,
+        "origin": "",
+        "required_capabilities": null,
+        "effects": null,
+        "preconditions": null,
+        "postconditions": null,
+        "plan": null,
+        "replay": false
+      },
+      "expected_effects": null,
+      "expected_post": "-",
+      "expected_effect_trace": null,
+      "unknown": {
+        "stage": "",
+        "step": "",
+        "reason": "",
+        "unknown_class": "",
+        "next_operation": "",
+        "blocked_by": null
+      },
+      "replay": false
+    },
+    {
+      "schema": "gooo/meta-operator-typechecker/generated/v1",
+      "case_id": "origin-capture",
+      "decision": "REFUTED",
+      "terminal_reason": "ORIGIN_CAPTURE",
+      "source_digest": "4bc40ade090d8e860e30275cf5da3b18f5dd817a1c272b6e84c2eaca79bd967d",
+      "contract_digest": "747107d682a3765f38c1674462732afd0e9463617fec5d1b5dbe249f56e6473b",
+      "ir_digest": "b25e84fc1f6f62bca9dbe3027d214dbf350b2a0245a56b38ecd9e68d15444ba5",
+      "target_stage": 2,
+      "typed_expression": {
+        "expression": {
+          "name": ""
+        },
+        "input_type": "",
+        "output_type": "",
+        "stage": 0,
+        "origin": "",
+        "required_capabilities": null,
+        "effects": null,
+        "preconditions": null,
+        "postconditions": null,
+        "plan": null,
+        "replay": false
+      },
+      "expected_effects": null,
+      "expected_post": "-",
+      "expected_effect_trace": null,
+      "unknown": {
+        "stage": "",
+        "step": "",
+        "reason": "",
+        "unknown_class": "",
+        "next_operation": "",
+        "blocked_by": null
+      },
+      "replay": false
+    },
+    {
+      "schema": "gooo/meta-operator-typechecker/generated/v1",
+      "case_id": "unbound-capability",
+      "decision": "UNKNOWN",
+      "terminal_reason": "UNBOUND_CAPABILITY",
+      "source_digest": "4bc40ade090d8e860e30275cf5da3b18f5dd817a1c272b6e84c2eaca79bd967d",
+      "contract_digest": "747107d682a3765f38c1674462732afd0e9463617fec5d1b5dbe249f56e6473b",
+      "ir_digest": "b25e84fc1f6f62bca9dbe3027d214dbf350b2a0245a56b38ecd9e68d15444ba5",
+      "target_stage": 2,
+      "typed_expression": {
+        "expression": {
+          "name": ""
+        },
+        "input_type": "",
+        "output_type": "",
+        "stage": 0,
+        "origin": "",
+        "required_capabilities": null,
+        "effects": null,
+        "preconditions": null,
+        "postconditions": null,
+        "plan": null,
+        "replay": false
+      },
+      "expected_effects": null,
+      "expected_post": "-",
+      "expected_effect_trace": null,
+      "unknown": {
+        "stage": "TYPECHECK",
+        "step": "bind_capability",
+        "reason": "UNBOUND_CAPABILITY",
+        "unknown_class": "UNBOUND_CAPABILITY",
+        "next_operation": "BindCompilerFixture",
+        "blocked_by": [
+          "compiler.fixture"
+        ]
+      },
+      "replay": false
+    },
+    {
+      "schema": "gooo/meta-operator-typechecker/generated/v1",
+      "case_id": "replay",
+      "decision": "CLOSED",
+      "terminal_reason": "REPLAY_EXACT_MATCH",
+      "source_digest": "4bc40ade090d8e860e30275cf5da3b18f5dd817a1c272b6e84c2eaca79bd967d",
+      "contract_digest": "747107d682a3765f38c1674462732afd0e9463617fec5d1b5dbe249f56e6473b",
+      "ir_digest": "b25e84fc1f6f62bca9dbe3027d214dbf350b2a0245a56b38ecd9e68d15444ba5",
+      "target_stage": 2,
+      "typed_expression": {
+        "expression": {
+          "name": "replay",
+          "args": [
+            {
+              "name": "identity"
+            }
+          ]
+        },
+        "input_type": "Fixture",
+        "output_type": "Fixture",
+        "stage": 2,
+        "origin": "fixture",
+        "required_capabilities": [
+          "compiler.fixture",
+          "replay.fixture"
+        ],
+        "effects": [
+          "replay.verify"
+        ],
+        "preconditions": [
+          "fixture_valid"
+        ],
+        "postconditions": [
+          "artifact_stable"
+        ],
+        "plan": [
+          {
+            "operation": "identity",
+            "capability": "compiler.fixture"
+          },
+          {
+            "operation": "replay",
+            "capability": "replay.fixture"
+          }
+        ],
+        "replay": true
+      },
+      "expected_effects": [
+        "replay.verify"
+      ],
+      "expected_post": "artifact_stable",
+      "expected_effect_trace": [
+        "identity:∅",
+        "replay:replay.verify"
+      ],
+      "unknown": {
+        "stage": "",
+        "step": "",
+        "reason": "",
+        "unknown_class": "",
+        "next_operation": "",
+        "blocked_by": null
+      },
+      "replay": true
+    }
+  ],
+  "ir_digest": "b25e84fc1f6f62bca9dbe3027d214dbf350b2a0245a56b38ecd9e68d15444ba5"
+}
