@@ -1,0 +1,62 @@
+name: conformance
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out immutable revision
+        uses: actions/checkout@v4
+      - name: Set up Go 1.27
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.27.x'
+          cache: true
+      - name: Build, test, vet, audit, integration, and conformance
+        shell: bash
+        run: |
+          set -euo pipefail
+          go build ./...
+          go test ./...
+          go vet ./...
+          go_files=$(git ls-files '*.go')
+          test -z "$(gofmt -d ${go_files})"
+          bash scripts/semantic-audit.sh
+
+          generated_dir=$(mktemp -d)
+          go run ./cmd/gooo-meta-operator-typechecker compile \
+            -source examples/meta-operator-typechecker-v1/main.gooo \
+            -contract contracts/denominator-v1.json \
+            -output-ir "${generated_dir}/semantic-ir.json" \
+            -output-go "${generated_dir}/meta.gooo.go"
+          cmp "${generated_dir}/semantic-ir.json" internal/generated/semantic-ir.json
+          cmp "${generated_dir}/meta.gooo.go" internal/generated/meta.gooo.go
+
+          integration_output="${RUNNER_TEMP}/gooo-meta-operator-typechecker-integration.json"
+          go run ./cmd/gooo-meta-operator-typechecker execute \
+            -root . -case replay > "${integration_output}"
+          test "$(jq -r '.verification.verified' "${integration_output}")" = "true"
+
+          conformance_dir="${RUNNER_TEMP}/gooo-meta-operator-typechecker-conformance"
+          go run ./cmd/gooo-meta-operator-typechecker conformance \
+            -root . -fixtures fixtures/compiler -output-dir "${conformance_dir}" \
+            -tests-total 7 -tests-selected 7 -tests-executed 7 \
+            -tests-reused 0 -tests-failed 0 -tests-unknown 0
+          jq -e '.decision == "CONFORMANCE_CLOSED" and (.cases | length) == 7 and .authority.repository_writes == 0 and .local_integration_executions == 0' \
+            "${conformance_dir}/conformance-report.json"
+          cat "${conformance_dir}/ci-summary.md" >> "${GITHUB_STEP_SUMMARY}"
+          test -z "$(git status --porcelain)"
+      - name: Upload exact conformance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gooo-meta-operator-typechecker-conformance
+          path: ${{ runner.temp }}/gooo-meta-operator-typechecker-conformance
+          if-no-files-found: warn

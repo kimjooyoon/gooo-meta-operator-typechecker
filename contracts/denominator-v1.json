@@ -1,0 +1,18 @@
+{
+  "schema": "gooo/meta-operator-typechecker/denominator/v1",
+  "id": "meta-operator-typechecker-v1",
+  "version": "v1",
+  "case_count": 7,
+  "fixed": true,
+  "case_ids": [
+    "identity-composition",
+    "disjoint-effect-composition",
+    "capability-polymorphic-instantiation",
+    "stage-escape",
+    "origin-capture",
+    "unbound-capability",
+    "replay"
+  ],
+  "contract_role": "transport_and_ci_identity_only",
+  "semantic_authority": "examples/meta-operator-typechecker-v1/main.gooo"
+}

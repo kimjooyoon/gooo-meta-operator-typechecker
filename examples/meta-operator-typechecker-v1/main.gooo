@@ -1,0 +1,54 @@
+gooo meta_operator_typechecker v1
+
+denominator id=meta-operator-typechecker-v1 case_count=7 fixed=true
+authority repository_writes=0 local_test_executions=0 cross_project_required_gates=0 automatic_commit=0 automatic_push=0 automatic_merge=0 automatic_release=0
+precedence REFUTED>UNKNOWN>CLOSED
+unknown_fields stage,step,reason,unknown_class,next_operation,blocked_by
+
+kind id=value
+kind id=meta
+kind id=proof
+
+type id=Fixture kind=value
+type id=Artifact kind=value
+type id=Unit kind=value
+type id=MetaOp kind=meta
+
+effect id=fixture.read
+effect id=artifact.normalize
+effect id=replay.verify
+
+stage id=quote index=0
+stage id=compile index=1
+stage id=run index=2
+
+origin id=literal identity=literal
+origin id=fixture identity=fixture
+origin id=generated identity=generated
+origin id=caller identity=caller
+
+capability id=compiler.fixture
+capability id=replay.fixture
+
+operation id=identity kind=MetaOp input=Fixture output=Fixture stage=run origin=fixture requires=compiler.fixture effects=- pre=fixture_valid post=artifact_stable
+operation id=read_fixture kind=MetaOp input=Fixture output=Fixture stage=run origin=fixture requires=compiler.fixture effects=fixture.read pre=fixture_valid post=fixture_read
+operation id=normalize kind=MetaOp input=Fixture output=Artifact stage=run origin=generated requires=compiler.fixture effects=artifact.normalize pre=fixture_read post=fixture_normalized
+operation id=generic_cap kind=MetaOp input=Fixture output=Fixture stage=run origin=fixture requires=$cap effects=fixture.read pre=fixture_valid post=fixture_read
+operation id=late_stage kind=MetaOp input=Fixture output=Fixture stage=run origin=fixture requires=compiler.fixture effects=- pre=fixture_valid post=artifact_stable
+operation id=capturing_op kind=MetaOp input=Fixture output=Fixture stage=run origin=generated requires=compiler.fixture effects=- pre=fixture_valid post=artifact_stable
+
+rule id=compose_effects operator=compose effects=disjoint_union
+rule id=stage_escape operator=compose stage=must_not_escape
+rule id=origin_hygiene operator=compose origin=must_be_hygienic
+rule id=capability_binding operator=instantiate missing=UNKNOWN
+rule id=replay operator=replay digest=exact
+
+fixture id=compiler_fixture path=fixtures/compiler/input.gooo expected_output=module:fixture;term:identity
+
+case ordinal=1 id=identity-composition expr=compose(identity,identity) fixture=compiler_fixture target_stage=run bound_caps=compiler.fixture expected=CLOSED expected_reason=IDENTITY_COMPOSITION_OK expected_effects=- expected_post=artifact_stable expected_trace=identity:∅,identity:∅
+case ordinal=2 id=disjoint-effect-composition expr=compose(read_fixture,normalize) fixture=compiler_fixture target_stage=run bound_caps=compiler.fixture expected=CLOSED expected_reason=DISJOINT_EFFECT_COMPOSITION_OK expected_effects=fixture.read,artifact.normalize expected_post=fixture_normalized expected_trace=read_fixture:fixture.read,normalize:artifact.normalize
+case ordinal=3 id=capability-polymorphic-instantiation expr=instantiate(generic_cap,compiler.fixture) fixture=compiler_fixture target_stage=run bound_caps=compiler.fixture expected=CLOSED expected_reason=CAPABILITY_POLYMORPHIC_INSTANTIATION_OK expected_effects=fixture.read expected_post=fixture_read expected_trace=generic_cap:fixture.read
+case ordinal=4 id=stage-escape expr=stage_escape(late_stage,quote) fixture=compiler_fixture target_stage=quote bound_caps=compiler.fixture expected=REFUTED expected_reason=STAGE_ESCAPE expected_effects=- expected_post=- expected_trace=-
+case ordinal=5 id=origin-capture expr=origin_capture(capturing_op,caller) fixture=compiler_fixture target_stage=run bound_caps=compiler.fixture expected=REFUTED expected_reason=ORIGIN_CAPTURE expected_effects=- expected_post=- expected_trace=-
+case ordinal=6 id=unbound-capability expr=unbound(read_fixture) fixture=compiler_fixture target_stage=run bound_caps=- expected=UNKNOWN expected_reason=UNBOUND_CAPABILITY expected_effects=- expected_post=- expected_trace=- unknown_class=UNBOUND_CAPABILITY next_operation=BindCompilerFixture blocked_by=compiler.fixture
+case ordinal=7 id=replay expr=replay(identity) fixture=compiler_fixture target_stage=run bound_caps=compiler.fixture,replay.fixture expected=CLOSED expected_reason=REPLAY_EXACT_MATCH expected_effects=replay.verify expected_post=artifact_stable expected_trace=identity:∅,replay:replay.verify
