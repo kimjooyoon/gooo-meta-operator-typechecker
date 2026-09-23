@@ -45,3 +45,9 @@ func TestFixtureCompiler(t *testing.T) {
 		t.Fatalf("output = %q", output)
 	}
 }
+
+func TestParseKeyValuesRejectsDuplicateKeys(t *testing.T) {
+	if _, err := parseKeyValues([]string{"id=first", "id=second"}); err == nil {
+		t.Fatal("key/value parser accepted a duplicate key")
+	}
+}
