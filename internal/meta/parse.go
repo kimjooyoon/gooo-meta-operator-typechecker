@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -24,9 +26,7 @@ func ParseSourceBytes(raw []byte) (SourceDecl, error) {
 	lineNumber := 0
 	for scanner.Scan() {
 		lineNumber++
-		line := strings.TrimSpace(scanner.Text())
-		line = strings.TrimSpace(strings.SplitN(line, "#", 2)[0])
-		line = strings.TrimSpace(strings.SplitN(line, "//", 2)[0])
+		line := stripComments(strings.TrimSpace(scanner.Text()))
 		if line == "" {
 			continue
 		}
@@ -211,12 +211,55 @@ func LoadContract(path string) (Contract, error) {
 		return Contract{}, err
 	}
 	var contract Contract
-	decoder := json.NewDecoder(bytes.NewReader(raw))
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&contract); err != nil {
-		return Contract{}, fmt.Errorf("decode contract: %w", err)
+	if err := decodeStrictJSON(raw, &contract, "contract"); err != nil {
+		return Contract{}, err
 	}
 	return contract, nil
+}
+
+func decodeStrictJSON(raw []byte, destination any, label string) error {
+	decoder := json.NewDecoder(bytes.NewReader(raw))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(destination); err != nil {
+		return fmt.Errorf("decode %s: %w", label, err)
+	}
+	var extra any
+	if err := decoder.Decode(&extra); !errors.Is(err, io.EOF) {
+		if err == nil {
+			return fmt.Errorf("decode %s: trailing JSON value", label)
+		}
+		return fmt.Errorf("decode %s: trailing data: %w", label, err)
+	}
+	return nil
+}
+
+func stripComments(line string) string {
+	quoted := false
+	escaped := false
+	for index := 0; index < len(line); index++ {
+		if escaped {
+			escaped = false
+			continue
+		}
+		if quoted && line[index] == '\\' {
+			escaped = true
+			continue
+		}
+		if line[index] == '"' {
+			quoted = !quoted
+			continue
+		}
+		if quoted {
+			continue
+		}
+		if line[index] == '#' {
+			return strings.TrimSpace(line[:index])
+		}
+		if line[index] == '/' && index+1 < len(line) && line[index+1] == '/' {
+			return strings.TrimSpace(line[:index])
+		}
+	}
+	return strings.TrimSpace(line)
 }
 
 func ContractDigest(contract Contract) (string, error) {
