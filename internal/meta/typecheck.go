@@ -13,6 +13,16 @@ type typedWork struct {
 }
 
 func TypecheckCase(source SourceDecl, caseDecl CaseDecl) (TypecheckResult, error) {
+	fixtureFound := false
+	for _, fixture := range source.Fixtures {
+		if fixture.ID == caseDecl.Fixture {
+			fixtureFound = true
+			break
+		}
+	}
+	if !fixtureFound {
+		return TypecheckResult{}, fmt.Errorf("case %s references undeclared fixture %q", caseDecl.ID, caseDecl.Fixture)
+	}
 	env := newEnvironment(source)
 	expression, err := ParseExpression(caseDecl.Expression)
 	if err != nil {
